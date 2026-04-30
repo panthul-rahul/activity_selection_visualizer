@@ -1,132 +1,59 @@
-# 🎯 Activity Selector — Greedy Algorithm Visualizer
+# 🎯 Activity Selector — Greedy Visualizer
 
 ## 📌 Overview
-
-This project is a **frontend-only web application** that demonstrates the **Activity Selection Problem** using a **Greedy Algorithm**.
-
-It allows users to input activities with start and end times, and then visually shows how the algorithm selects the maximum number of non-overlapping activities.
-
-The application is fully interactive and runs entirely in the browser without any backend.
+Frontend-only web app to demonstrate **Activity Selection (Greedy Algorithm)**.  
+Runs fully in browser (no backend).
 
 ---
 
 ## 🚀 Features
-
-* ➕ Add and remove activities dynamically
-* ▶️ Run greedy algorithm to select optimal activities
-* 📊 Timeline visualization using SVG
-* 🔍 Step-by-step execution trace
-* 🎯 Highlight selected and rejected activities
-* 🧮 Displays total number of selected activities
-* ⚡ Instant results (no server required)
+- Add/remove activities  
+- Run greedy selection  
+- Step-by-step visualization  
+- Highlights selected/rejected  
+- Shows total selected  
 
 ---
 
-## 🧠 Algorithm Used
-
-### Greedy Activity Selection Algorithm
-
-The algorithm works as follows:
-
-1. Sort all activities based on their **end time**
-2. Select the first activity
-3. For each next activity:
-
-   * If its start time ≥ last selected activity’s end time → **Select**
-   * Otherwise → **Reject**
+## 🧠 Algorithm
+1. Sort by end time  
+2. Pick first activity  
+3. If `start ≥ last end` → Select else Reject  
 
 ---
 
-## ⏱ Time & Space Complexity
+## 💡 Greedy Strategy Explanation
+The greedy approach makes the **best local choice at each step**.  
+Here, we always pick the activity that **finishes earliest**, because it leaves maximum time for remaining activities.  
 
-* **Time Complexity:** `O(n log n)` (due to sorting)
-* **Space Complexity:** `O(n)`
+By doing this repeatedly, we ensure:
+- More activities can fit without overlap  
+- The final solution is **optimal (maximum number of activities)**  
 
----
-
-## 🖥️ Tech Stack
-
-* HTML5
-* CSS3
-* JavaScript (Vanilla JS)
-* SVG (for visualization)
 
 ---
 
-## 📂 Project Structure
-
-```
-project/
-│── index.html
-│── style.css
-│── script.js
-```
-
-*(In this project, all code is combined into a single HTML file for simplicity.)*
+## ⏱ Complexity
+- Time: `O(n log n)`  
+- Space: `O(n)`  
 
 ---
 
-## ▶️ How to Run
-
-1. Download or clone the repository
-2. Open the file:
-
-```
-index.html
-```
-
-3. Run it in any browser (Chrome recommended)
-
-No installation or setup required.
+## 🖥 Tech Stack
+HTML, CSS, JavaScript, SVG  
 
 ---
 
-## 📷 How It Works
+## ▶️ Run
 
-1. Enter activity name, start time, and end time
-2. Click **Add Activity**
-3. Click **Run**
-4. The system will:
+```bash
+git clone https://github.com/panthul-rahul/activity-selector.git
+cd activity-selector
 
-   * Sort activities
-   * Select optimal ones
-   * Show step-by-step decisions
-   * Display results visually on a timeline
-
----
-
-## 🌍 Real-World Applications
-
-* Meeting scheduling
-* CPU task scheduling
-* Event planning
-* Resource allocation problems
-
----
-
-## ⚠️ Limitations
-
-* Only demonstrates greedy approach
-* No backend or data persistence
-* Works on manually entered data only
-
----
-
-## 🔮 Future Improvements
-
-* Add comparison with non-greedy approaches
-* Auto-play animation for steps
-* Save/load activity sets
-* Add more algorithm visualizations
-
----
-
-## 👨‍💻 Author
-
-Developed as a frontend-based algorithm visualization project.
-
----
-
-## 📌 Conclusion
-
-This project effectively demonstrates how a **Greedy Algorithm** can be used to solve optimization problems efficiently, while also providing a clear visual understanding of each step in the process.
+##Team members
+1)Shaik Sadiq-AP24110011603
+2)Panthul Rahul-AP24110011575
+3)Balagi-AP24110011610
+4)Om Prakash Reddy-AP24110011560
+5)Katta Manoj-AP24110011600
+Submitted to: CCC-SRM University
