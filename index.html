@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Activity Selector — Greedy Algorithm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f0c;
+    --bg2: #161713;
+    --bg3: #1e1f1b;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.14);
+    --text: #e8e6df;
+    --text2: #9c9a92;
+    --text3: #5a5852;
+    --accent: #b8f04a;
+    --accent-dim: rgba(184,240,74,0.12);
+    --accent-dark: #7ab528;
+    --reject: #ff6b47;
+    --reject-dim: rgba(255,107,71,0.12);
+    --mono: 'DM Mono', monospace;
+    --display: 'Fraunces', serif;
+  }
+
+  html { background: var(--bg); color: var(--text); font-family: var(--mono); min-height: 100vh; }
+  body { min-height: 100vh; }
+
+  /* ── Layout ── */
+  .app { display: grid; grid-template-columns: 380px 1fr; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-header {
+    padding: 32px 28px 24px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--bg2); z-index: 10;
+  }
+
+  .logo-tag {
+    font-size: 10px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .sidebar-title {
+    font-family: var(--display);
+    font-size: 26px;
+    font-weight: 300;
+    line-height: 1.25;
+    color: var(--text);
+  }
+  .sidebar-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .sidebar-body { padding: 24px 28px; flex: 1; }
+
+  .field-group { margin-bottom: 20px; }
+  .field-label {
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .input-grid { display: grid; grid-template-columns: 1fr 80px 80px; gap: 8px; }
+
+  input[type="text"], input[type="number"] {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    width: 100%;
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+  }
+  input[type="text"]:focus, input[type="number"]:focus {
+    border-color: var(--accent-dark);
+    box-shadow: 0 0 0 3px rgba(184,240,74,0.08);
+  }
+  input::placeholder { color: var(--text3); }
+
+  .btn-add {
+    width: 100%;
+    background: var(--accent);
+    color: #0e0f0c;
+    border: none;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 11px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    margin-top: 4px;
+    letter-spacing: .04em;
+  }
+  .btn-add:hover { background: #cef570; }
+  .btn-add:active { transform: scale(.98); }
+
+  .error-msg { font-size: 11px; color: var(--reject); margin-top: 6px; min-height: 16px; }
+
+  /* activity list */
+  .act-list { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .act-chip {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-size: 12px;
+    transition: border-color .15s;
+    animation: slideIn .2s ease;
+  }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+  .act-chip.selected { border-color: var(--accent-dark); background: rgba(184,240,74,0.06); }
+  .act-chip.rejected { border-color: rgba(255,107,71,0.3); background: rgba(255,107,71,0.04); }
+
+  .act-name {
+    font-weight: 500;
+    min-width: 28px;
+    color: var(--text);
+  }
+  .act-name.selected { color: var(--accent); }
+  .act-name.rejected { color: var(--reject); }
+
+  .act-times { color: var(--text2); flex: 1; }
+  .act-times span { color: var(--text3); }
+
+  .act-del {
+    background: none; border: none; color: var(--text3); cursor: pointer;
+    font-size: 14px; line-height: 1; padding: 2px 4px; border-radius: 3px;
+    transition: color .15s, background .15s;
+  }
+  .act-del:hover { color: var(--reject); background: var(--reject-dim); }
+
+  .empty-hint { font-size: 12px; color: var(--text3); padding: 12px 0; text-align: center; }
+
+  .sidebar-actions {
+    padding: 20px 28px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 8px;
+    position: sticky; bottom: 0; background: var(--bg2);
+  }
+
+  .btn-ghost {
+    flex: 1; background: none; border: 1px solid var(--border2);
+    color: var(--text2); font-family: var(--mono); font-size: 12px;
+    padding: 9px 12px; border-radius: 6px; cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s;
+  }
+  .btn-ghost:hover { border-color: var(--text3); color: var(--text); background: var(--bg3); }
+
+  .btn-run {
+    flex: 2; background: none; border: 1px solid var(--accent-dark);
+    color: var(--accent); font-family: var(--mono); font-size: 12px; font-weight: 500;
+    padding: 9px 16px; border-radius: 6px; cursor: pointer;
+    letter-spacing: .06em; text-transform: uppercase;
+    transition: background .15s, color .15s;
+    position: relative; overflow: hidden;
+  }
+  .btn-run:hover { background: var(--accent); color: #0e0f0c; }
+  .btn-run:active { transform: scale(.98); }
+
+  /* ── Main panel ── */
+  .main { display: flex; flex-direction: column; overflow: hidden; }
+
+  .main-header {
+    padding: 28px 36px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+
+  .main-title { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--text3); }
+
+  .result-pill {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent-dark);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  .result-pill.visible { opacity: 1; }
+  .result-num { font-family: var(--display); font-size: 20px; font-weight: 600; }
+
+  .main-body { flex: 1; overflow-y: auto; padding: 28px 36px; display: flex; flex-direction: column; gap: 32px; }
+
+  /* ── Timeline ── */
+  .panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .panel-head {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--text3);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .panel-head .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .panel-body { padding: 20px; }
+
+  #timeline-svg { display: block; width: 100%; overflow: visible; }
+
+  /* ── Steps ── */
+  .stepper-nav-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .nav-btns { display: flex; gap: 6px; }
+  .nav-btn {
+    background: none; border: 1px solid var(--border2);
+    color: var(--text2); font-family: var(--mono); font-size: 11px;
+    padding: 5px 12px; border-radius: 5px; cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s;
+  }
+  .nav-btn:hover { border-color: var(--accent-dark); color: var(--accent); }
+  .nav-btn:disabled { opacity: .3; cursor: default; }
+
+  .step-list { max-height: 340px; overflow-y: auto; }
+
+  .step-row {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    line-height: 1.6;
+    opacity: .35;
+    transition: opacity .2s, background .2s;
+    cursor: pointer;
+  }
+  .step-row:last-child { border-bottom: none; }
+  .step-row.active {
+    opacity: 1;
+    background: var(--bg3);
+  }
+  .step-row.prev { opacity: .65; }
+  .step-row:hover { opacity: 1; background: var(--bg3); }
+
+  .step-icon {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 500; flex-shrink: 0; margin-top: 1px;
+  }
+  .icon-sort { background: rgba(255,255,255,0.06); color: var(--text2); font-size: 9px; }
+  .icon-sel { background: var(--accent-dim); color: var(--accent); }
+  .icon-rej { background: var(--reject-dim); color: var(--reject); }
+
+  .step-content { flex: 1; color: var(--text2); }
+  .step-content strong { color: var(--text); font-weight: 500; }
+  .step-content .tag {
+    display: inline-block; font-size: 10px; padding: 1px 7px;
+    border-radius: 10px; margin-left: 6px; font-weight: 500;
+  }
+  .tag-sel { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-dark); }
+  .tag-rej { background: var(--reject-dim); color: var(--reject); border: 1px solid rgba(255,107,71,0.35); }
+
+  .progress-bar {
+    height: 2px; background: var(--bg3);
+    position: relative; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: var(--accent);
+    transition: width .3s ease;
+  }
+
+  /* Empty state */
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--text3); gap: 12px; padding: 60px;
+    text-align: center;
+  }
+  .empty-state .big { font-family: var(--display); font-size: 48px; font-weight: 300; color: var(--border2); }
+  .empty-state p { font-size: 13px; line-height: 1.7; max-width: 300px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); max-height: 55vh; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-tag">Greedy Algorithm</div>
+      <h1 class="sidebar-title">Activity<br /><em>Selector</em></h1>
+    </div>
+
+    <div class="sidebar-body">
+      <!-- Add form -->
+      <div class="field-group">
+        <label class="field-label">New activity</label>
+        <div class="input-grid">
+          <input type="text" id="inp-name" placeholder="Name" value="A" maxlength="8" />
+          <input type="number" id="inp-start" placeholder="Start" value="0" min="0" max="99" />
+          <input type="number" id="inp-end" placeholder="End" value="3" min="1" max="100" />
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;font-size:10px;color:var(--text3)">
+          <span style="flex:1;text-align:center">Name</span>
+          <span style="width:80px;text-align:center">Start time</span>
+          <span style="width:80px;text-align:center">End time</span>
+        </div>
+        <button class="btn-add" onclick="addActivity()">+ Add Activity</button>
+        <div class="error-msg" id="add-err"></div>
+      </div>
+
+      <!-- List -->
+      <div class="field-group">
+        <label class="field-label">Activities <span id="act-count" style="color:var(--text3)"></span></label>
+        <div class="act-list" id="act-list">
+          <div class="empty-hint">No activities yet</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-actions">
+      <button class="btn-ghost" onclick="loadPreset()">Load example</button>
+      <button class="btn-ghost" onclick="clearAll()">Clear</button>
+      <button class="btn-run" onclick="runGreedy()">▶ Run</button>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main class="main">
+    <div class="main-header">
+      <span class="main-title">Visualizer</span>
+      <div class="result-pill" id="result-pill">
+        <span class="result-num" id="result-num">0</span>
+        <span style="font-size:12px">activities selected</span>
+      </div>
+    </div>
+
+    <div class="main-body" id="main-body">
+      <!-- empty state until run -->
+      <div class="empty-state" id="empty-state">
+        <div class="big">∅</div>
+        <p>Add activities on the left, then hit <strong style="color:var(--accent)">Run</strong> to see the greedy selection animate on a timeline.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+let activities = [];
+let stepIdx = 0;
+let steps = [];
+let nameSeq = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+let namePos = 0;
+
+function uid() { return Math.random().toString(36).slice(2, 9); }
+function nextName() {
+  const used = new Set(activities.map(a => a.name));
+  while (namePos < nameSeq.length && used.has(nameSeq[namePos])) namePos++;
+  return namePos < nameSeq.length ? nameSeq[namePos] : ('X' + activities.length);
+}
+
+// ── Add / Remove ───────────────────────────────────────
+function addActivity() {
+  const nameEl = document.getElementById('inp-name');
+  const startEl = document.getElementById('inp-start');
+  const endEl = document.getElementById('inp-end');
+  const err = document.getElementById('add-err');
+  err.textContent = '';
+  const name = nameEl.value.trim();
+  const start = parseInt(startEl.value);
+  const end = parseInt(endEl.value);
+  if (!name) { err.textContent = 'Name required.'; return; }
+  if (isNaN(start) || isNaN(end)) { err.textContent = 'Enter valid numbers.'; return; }
+  if (end <= start) { err.textContent = 'End must be > start.'; return; }
+  if (activities.some(a => a.name === name)) { err.textContent = `"${name}" already exists.`; return; }
+  activities.push({ id: uid(), name, start, end });
+  namePos++;
+  nameEl.value = nextName();
+  endEl.value = Math.min(end + 2, 100);
+  clearResults();
+  renderSidebar();
+}
+
+function removeActivity(id) {
+  activities = activities.filter(a => a.id !== id);
+  clearResults();
+  renderSidebar();
+}
+
+function clearAll() {
+  activities = [];
+  namePos = 0;
+  document.getElementById('inp-name').value = nextName() || 'A';
+  clearResults();
+  renderSidebar();
+}
+
+function loadPreset() {
+  clearAll();
+  const preset = [
+    { name: 'A', start: 1,  end: 4  },
+    { name: 'B', start: 3,  end: 5  },
+    { name: 'C', start: 0,  end: 6  },
+    { name: 'D', start: 5,  end: 7  },
+    { name: 'E', start: 3,  end: 9  },
+    { name: 'F', start: 5,  end: 9  },
+    { name: 'G', start: 6,  end: 10 },
+    { name: 'H', start: 8,  end: 11 },
+    { name: 'I', start: 8,  end: 12 },
+    { name: 'J', start: 2,  end: 14 },
+    { name: 'K', start: 12, end: 16 },
+  ];
+  preset.forEach(p => activities.push({ id: uid(), ...p }));
+  namePos = preset.length;
+  clearResults();
+  renderSidebar();
+}
+
+// ── Greedy algorithm ───────────────────────────────────
+function runGreedy() {
+  if (!activities.length) return;
+  steps = [];
+  const sorted = [...activities].sort((a, b) => a.end !== b.end ? a.end - b.end : a.start - b.start);
+  steps.push({
+    type: 'sort',
+    order: sorted.map(a => a.name).join(' → '),
+    selectedSoFar: new Set(),
+    highlight: null,
+  });
+  const selected = [];
+  let lastEnd = -Infinity;
+  for (const a of sorted) {
+    const ok = a.start >= lastEnd;
+    steps.push({
+      type: ok ? 'select' : 'reject',
+      activity: a,
+      lastEnd: lastEnd === -Infinity ? '−∞' : lastEnd,
+      selectedSoFar: new Set(selected.map(x => x.id)),
+      highlight: a.id,
+    });
+    if (ok) { selected.push(a); lastEnd = a.end; }
+  }
+  stepIdx = steps.length - 1;
+  document.getElementById('empty-state') && document.getElementById('empty-state').remove();
+  renderAll();
+}
+
+// ── Render sidebar ─────────────────────────────────────
+function renderSidebar() {
+  const el = document.getElementById('act-list');
+  const countEl = document.getElementById('act-count');
+  countEl.textContent = activities.length ? `(${activities.length})` : '';
+  if (!activities.length) {
+    el.innerHTML = '<div class="empty-hint">No activities yet</div>';
+    return;
+  }
+  const finalSelected = getFinalSelected();
+  el.innerHTML = activities.map(a => {
+    const isSel = finalSelected && finalSelected.has(a.id);
+    const isRej = finalSelected && !finalSelected.has(a.id);
+    const chipClass = finalSelected ? (isSel ? 'selected' : 'rejected') : '';
+    const nameClass = finalSelected ? (isSel ? 'selected' : 'rejected') : '';
+    return `<div class="act-chip ${chipClass}">
+      <span class="act-name ${nameClass}">${a.name}</span>
+      <span class="act-times">${a.start} <span>→</span> ${a.end}</span>
+      <button class="act-del" onclick="removeActivity('${a.id}')" title="Remove">×</button>
+    </div>`;
+  }).join('');
+}
+
+function getFinalSelected() {
+  if (!steps.length) return null;
+  const last = steps[steps.length - 1];
+  const full = new Set(last.selectedSoFar);
+  if (last.type === 'select') full.add(last.activity.id);
+  return full;
+}
+
+// ── Render everything ──────────────────────────────────
+function renderAll() {
+  const mainBody = document.getElementById('main-body');
+
+  // Build panels
+  mainBody.innerHTML = `
+    <div class="panel" id="timeline-panel">
+      <div class="panel-head"><div class="dot"></div>Timeline</div>
+      <div class="panel-body" id="timeline-body"></div>
+    </div>
+    <div class="panel" id="steps-panel">
+      <div class="panel-head"><div class="dot"></div>Step-by-step trace</div>
+      <div class="stepper-nav-bar">
+        <span id="step-counter" style="font-size:11px"></span>
+        <div class="nav-btns">
+          <button class="nav-btn" id="btn-prev" onclick="stepNav(-1)">← Prev</button>
+          <button class="nav-btn" id="btn-next" onclick="stepNav(1)">Next →</button>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+      <div class="step-list" id="step-list"></div>
+    </div>`;
+
+  renderTimeline();
+  renderSteps();
+  updateResult();
+  renderSidebar();
+}
+
+function clearResults() {
+  steps = [];
+  stepIdx = 0;
+  const mainBody = document.getElementById('main-body');
+  if (!document.getElementById('empty-state')) {
+    mainBody.innerHTML = `<div class="empty-state" id="empty-state">
+      <div class="big">∅</div>
+      <p>Add activities on the left, then hit <strong style="color:var(--accent)">Run</strong> to see the greedy selection animate on a timeline.</p>
+    </div>`;
+  }
+  document.getElementById('result-pill').classList.remove('visible');
+  renderSidebar();
+}
+
+// ── Timeline SVG ───────────────────────────────────────
+function renderTimeline() {
+  if (!activities.length) return;
+  const body = document.getElementById('timeline-body');
+  const sorted = [...activities].sort((a, b) => a.end !== b.end ? a.end - b.end : a.start - b.start);
+
+  // Compute the selected set up to current step
+  const selSet = getSelAtStep(stepIdx);
+  const hlId = steps[stepIdx] && steps[stepIdx].highlight;
+
+  const W = 760, padL = 48, padR = 16, padT = 12;
+  const rowH = 28, gap = 7;
+  const tMin = Math.max(0, Math.min(...activities.map(a => a.start)) - 0.5);
+  const tMax = Math.max(...activities.map(a => a.end)) + 0.5;
+  const tRange = tMax - tMin;
+  const timeW = W - padL - padR;
+  const svgH = sorted.length * (rowH + gap) + padT + 40;
+  const tx = t => padL + ((t - tMin) / tRange) * timeW;
+
+  let bars = '';
+  sorted.forEach((a, i) => {
+    const y = padT + i * (rowH + gap);
+    const x1 = tx(a.start), x2 = tx(a.end);
+    const bw = Math.max(x2 - x1, 20);
+    const isSel = selSet.has(a.id);
+    const isHL = a.id === hlId;
+    const fill = isSel ? 'rgba(184,240,74,0.15)' : (steps.length > 1 ? 'rgba(255,107,71,0.1)' : 'rgba(255,255,255,0.04)');
+    const stroke = isSel ? '#7ab528' : (steps.length > 1 ? 'rgba(255,107,71,0.45)' : 'rgba(255,255,255,0.1)');
+    const textCol = isSel ? '#b8f04a' : (steps.length > 1 ? '#ff6b47' : '#9c9a92');
+    const sw = isHL ? 1.5 : 0.8;
+    const glowFilter = isHL ? 'filter: drop-shadow(0 0 6px rgba(184,240,74,0.5));' : '';
+
+    bars += `<g style="${glowFilter}">
+      <rect x="${x1.toFixed(1)}" y="${y}" width="${bw.toFixed(1)}" height="${rowH}" rx="5"
+        fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>
+      <text x="${(x1 + bw / 2).toFixed(1)}" y="${(y + rowH / 2 + 4.5).toFixed(1)}"
+        text-anchor="middle" font-size="11" font-weight="500" fill="${textCol}"
+        font-family="'DM Mono', monospace">${a.name}</text>
+    </g>`;
+  });
+
+  // Axis ticks
+  let ticks = '';
+  const step = tRange <= 20 ? 1 : tRange <= 50 ? 2 : 5;
+  for (let t = Math.ceil(tMin); t <= Math.floor(tMax); t += step) {
+    const x = tx(t);
+    ticks += `<line x1="${x.toFixed(1)}" y1="${padT - 4}" x2="${x.toFixed(1)}" y2="${svgH - 26}"
+      stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+    <text x="${x.toFixed(1)}" y="${svgH - 8}" text-anchor="middle" font-size="10"
+      fill="#5a5852" font-family="'DM Mono', monospace">${t}</text>`;
+  }
+
+  // Current activity highlight line
+  let hlLine = '';
+  if (hlId) {
+    const a = activities.find(x => x.id === hlId);
+    if (a) {
+      const x = tx(a.start);
+      hlLine = `<line x1="${x.toFixed(1)}" y1="${padT}" x2="${x.toFixed(1)}" y2="${svgH - 26}"
+        stroke="rgba(184,240,74,0.25)" stroke-width="1" stroke-dasharray="3 3"/>`;
+    }
+  }
+
+  // legend
+  const legend = `
+    <rect x="${W - 180}" y="${svgH - 22}" width="10" height="10" rx="2"
+      fill="rgba(184,240,74,0.15)" stroke="#7ab528" stroke-width="0.8"/>
+    <text x="${W - 164}" y="${svgH - 13}" font-size="10" fill="#5a5852" font-family="'DM Mono', monospace">Selected</text>
+    <rect x="${W - 104}" y="${svgH - 22}" width="10" height="10" rx="2"
+      fill="rgba(255,107,71,0.1)" stroke="rgba(255,107,71,0.45)" stroke-width="0.8"/>
+    <text x="${W - 88}" y="${svgH - 13}" font-size="10" fill="#5a5852" font-family="'DM Mono', monospace">Skipped</text>`;
+
+  body.innerHTML = `<svg id="timeline-svg" viewBox="0 0 ${W} ${svgH}" xmlns="http://www.w3.org/2000/svg">
+    ${ticks}${hlLine}${bars}${legend}
+  </svg>`;
+}
+
+// ── Steps panel ────────────────────────────────────────
+function renderSteps() {
+  const list = document.getElementById('step-list');
+  if (!list) return;
+  list.innerHTML = steps.map((s, i) => {
+    const rel = i < stepIdx ? 'prev' : i === stepIdx ? 'active' : '';
+    let icon, content;
+    if (s.type === 'sort') {
+      icon = `<div class="step-icon icon-sort">S</div>`;
+      content = `<strong>Sort by finish time</strong><br><span style="color:var(--text3);font-size:11px">${s.order}</span>`;
+    } else if (s.type === 'select') {
+      icon = `<div class="step-icon icon-sel">✓</div>`;
+      content = `<strong>${s.activity.name}</strong> [${s.activity.start}–${s.activity.end}]
+        — starts at ${s.activity.start} ≥ last end ${s.lastEnd}
+        <span class="tag tag-sel">selected</span>`;
+    } else {
+      icon = `<div class="step-icon icon-rej">✗</div>`;
+      content = `<strong>${s.activity.name}</strong> [${s.activity.start}–${s.activity.end}]
+        — starts at ${s.activity.start} &lt; last end ${s.lastEnd}
+        <span class="tag tag-rej">skipped</span>`;
+    }
+    return `<div class="step-row ${rel}" onclick="jumpStep(${i})">
+      ${icon}
+      <div class="step-content">${content}</div>
+    </div>`;
+  }).join('');
+
+  // Scroll active into view
+  setTimeout(() => {
+    const activeEl = list.querySelector('.step-row.active');
+    if (activeEl) activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, 50);
+
+  // Counter + progress
+  const counter = document.getElementById('step-counter');
+  if (counter) counter.textContent = `${stepIdx + 1} / ${steps.length}`;
+  const fill = document.getElementById('prog-fill');
+  if (fill) fill.style.width = `${((stepIdx + 1) / steps.length) * 100}%`;
+
+  // Nav buttons
+  const prev = document.getElementById('btn-prev');
+  const next = document.getElementById('btn-next');
+  if (prev) prev.disabled = stepIdx === 0;
+  if (next) next.disabled = stepIdx === steps.length - 1;
+}
+
+function getSelAtStep(idx) {
+  const set = new Set();
+  for (let i = 0; i <= idx; i++) {
+    if (steps[i] && steps[i].type === 'select') set.add(steps[i].activity.id);
+  }
+  return set;
+}
+
+function jumpStep(i) {
+  stepIdx = i;
+  renderTimeline();
+  renderSteps();
+}
+
+function stepNav(dir) {
+  stepIdx = Math.max(0, Math.min(steps.length - 1, stepIdx + dir));
+  renderTimeline();
+  renderSteps();
+}
+
+function updateResult() {
+  const pill = document.getElementById('result-pill');
+  const num = document.getElementById('result-num');
+  const finalSel = getFinalSelected();
+  if (finalSel) {
+    num.textContent = finalSel.size;
+    pill.classList.add('visible');
+  }
+}
+
+// ── Enter key on inputs ────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && ['inp-name','inp-start','inp-end'].includes(document.activeElement.id)) {
+    addActivity();
+  }
+});
+
+// ── Init ───────────────────────────────────────────────
+renderSidebar();
+</script>
+</body>
+</html>
